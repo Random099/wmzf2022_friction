@@ -17,7 +17,7 @@ class Plots:
         self.ax.set_title(plot_title)
         self.ax.set_xticks(x)
         self.ax.grid()
-        self.error_box = self.fig.text(0.025, 0.025, '', fontsize=11) #Object displaying feedback messages
+        self.error_box = self.fig.text(0.025, 0.025, '', fontsize=11) #Object displaying feedback message
         self.elements = {} #Dict holding references to the elements on the plot
 
     def createTextbox(self, element_name, title, initial_text, bottom=0.57, width=0.12, height=0.05, left=0.02): #Adds a text box object to the plot
