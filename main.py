@@ -9,9 +9,9 @@ class Plots:
         self.x = x
         self.y = y
         self.fig, self.ax = plt.subplots()
+        self.line, = self.ax.plot(self.x, self.y)
         self.fig.set_size_inches(13.5, 7)
         self.fig.subplots_adjust(left=0.225)
-        self.line, = plt.plot(self.x, self.y)
         self.ax.set_xlabel(x_label)
         self.ax.set_ylabel(y_label)
         self.ax.set_title(plot_title)
@@ -22,13 +22,13 @@ class Plots:
 
     def createTextbox(self, element_name, title, initial_text, bottom=0.57, width=0.12, height=0.05, left=0.02): #Adds a text box object to the plot
         box_ax = plt.axes([left, bottom, width, height])
-        label = box_ax.text(0, 1.1, title)
+        box_ax.text(0, 1.1, title)
         self.elements[element_name] = wgs.TextBox(box_ax, '', initial=initial_text, textalignment='center')
 
-    def createRadio(self, element_name, title, bottom=0.9, width=0.12, height=0.1, left=0.02, color='white', **kwargs): #Adds a radio button object to the plot
+    def createRadio(self, element_name, title, bottom=0.9, width=0.12, height=0.1, left=0.02, color='white', buttons=()): #Adds a radio button object to the plot
         radio_ax = plt.axes([left, bottom, width, height], facecolor=color)
-        label = radio_ax.text(0, 1.1, title)
-        self.elements[element_name] = wgs.RadioButtons(radio_ax, kwargs['buttons'])
+        radio_ax.text(0, 1.1, title)
+        self.elements[element_name] = wgs.RadioButtons(radio_ax, buttons)
 
     def setY(self, factor): #For testing purposes
         try:
@@ -40,8 +40,11 @@ class Plots:
             self.fig.canvas.draw()
 
     def setAxisY(self, new_y):
-        self.line.set_ydata(new_y)
+        self.y = new_y
+        self.line.set_data([], [])
+        self.line, = self.ax.plot(self.x, self.y)
         self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
 
     @staticmethod
     def errorBoxFailure(error_box, message):
@@ -66,7 +69,7 @@ class Friction(Plots):
     @staticmethod
     def inclinedPlaneAcceleration(angle, coefficient):
         g = float(9.8067)
-        return (g * math.sin(angle)) - (coefficient * g * math.cos(angle))
+        return (g * math.sin(np.radians(angle))) - (coefficient * g * math.cos(np.radians(angle)))
 
     @staticmethod
     def calculateVelocity(acceleration, time):
@@ -94,14 +97,14 @@ class Friction(Plots):
 
 if __name__ == '__main__':
     time = np.arange(0, 21)
-    friction_plot = Friction(time, 30, 0.1)
+    friction_plot = Friction(time, 30, 0.5)
 
     friction_plot.createTextbox('acceleration_input', 'Set Y: ', '0', 0.55)
     friction_plot.createTextbox('incline_angle', 'Angle[degrees]: ', '0', 0.45)
     friction_plot.createRadio('surface_radio', 'Surface type: ', 0.8, buttons=('Concrete', 'Wood'))
     friction_plot.createRadio('condition_radio', 'Surface condition: ', 0.65, buttons=('Dry', 'Wet'))
 
-    friction_plot.elements['acceleration_input'].on_submit(friction_plot.setY)
+    #friction_plot.elements['acceleration_input'].on_submit(friction_plot.setY)
     friction_plot.elements['incline_angle'].on_submit(friction_plot.setAngle)
 
     plt.show()
