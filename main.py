@@ -5,11 +5,12 @@ import math
 
 
 class Plots:
-    def __init__(self, x, y, plot_title: str, x_label: str, y_label: str): #Default plot
+    def __init__(self, x, y, plot_title: str, x_label: str, y_label: str, line_color: str): #Default plot
         self.x = x
         self.y = y
+        self.line_color = line_color
         self.fig, self.ax = plt.subplots()
-        self.line, = self.ax.plot(self.x, self.y)
+        self.line, = self.ax.plot(self.x, self.y, self.line_color)
         self.fig.set_size_inches(13.5, 7)
         self.fig.subplots_adjust(left=0.225)
         self.ax.set_xlabel(x_label)
@@ -18,7 +19,6 @@ class Plots:
         self.ax.set_xticks(self.x)
         self.ax.grid()
         self.error_box = self.fig.text(0.025, 0.025, '', fontsize=11) #Object displaying feedback message
-        print(type(self.error_box))
         self.elements = {} #Dict holding references to the elements on the plot
 
     def createTextbox(self, element_name: str, title: str, initial_text: str, bottom=0.57, width=0.12, height=0.05, left=0.02): #Adds a text box object to the plot
@@ -43,7 +43,9 @@ class Plots:
     def setAxisY(self, new_y):
         self.y = new_y
         self.line.set_data([], [])
-        self.line, = self.ax.plot(self.x, self.y)
+        self.line, = self.ax.plot(self.x, self.y, self.line_color)
+        self.ax.set_ylim(self.y[0], self.y[-1])
+        self.ax.set_yticks(Plots.s_round(self.y))
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
@@ -59,18 +61,22 @@ class Plots:
         error_box.set_color('black')
         error_box.set_bbox(dict(facecolor='none', edgecolor='none'))
 
+    @staticmethod
+    def s_round(number, base=5) -> float:
+        return base * np.round(number / base)
 
 class Friction(Plots):
+    g = float(9.8067)
+
     def __init__(self, x, angle: float, coefficient: float, plot_title='Friction', x_label='time[s]', y_label='V(t)[m/s]'): #Default friction plot
         y = Friction.calculateVelocity(Friction.inclinedPlaneAcceleration(angle, coefficient), x)
-        Plots.__init__(self, x, y, plot_title, x_label, y_label)
+        Plots.__init__(self, x, y, plot_title, x_label, y_label, line_color='green')
         self.angle = angle
         self.coefficient = coefficient
 
     @staticmethod
     def inclinedPlaneAcceleration(angle: float, coefficient: float) -> float:
-        g = float(9.8067)
-        return (g * math.sin(np.radians(angle))) - (coefficient * g * math.cos(np.radians(angle)))
+        return (Friction.g * math.sin(np.radians(angle))) - (coefficient * Friction.g * math.cos(np.radians(angle)))
 
     @staticmethod
     def calculateVelocity(acceleration: float, time: float) -> float:
@@ -83,9 +89,9 @@ class Friction(Plots):
             elif float(new_angle) < 0 or float(new_angle) > 90:
                 raise Warning('Angle not in range(0-90)')
         except TypeError as err:
-            Friction.errorBoxFailure(self.error_box, err)
+            Friction.errorBoxFailure(self.error_box, str(err))
         except Warning as err:
-            Friction.errorBoxFailure(self.error_box, err)
+            Friction.errorBoxFailure(self.error_box, str(err))
         else:
             self.angle = float(new_angle)
             self.setAxisY(Friction.calculateVelocity(Friction.inclinedPlaneAcceleration(self.angle, self.coefficient),
@@ -98,7 +104,7 @@ class Friction(Plots):
             if not(new_friction_coefficient.isnumeric()):
                 raise TypeError('Friction coefficient must be a numeric value')
         except TypeError as err:
-            Friction.errorBoxFailure(self.error_box, err)
+            Friction.errorBoxFailure(self.error_box, str(err))
         else:
             self.coefficient = float(new_friction_coefficient)
             self.setAxisY(Friction.calculateVelocity(Friction.inclinedPlaneAcceleration(self.angle, self.coefficient),
