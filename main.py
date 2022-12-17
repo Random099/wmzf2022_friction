@@ -31,6 +31,10 @@ class Plots:
         radio_ax.text(0, 1.1, title)
         self.elements[element_name] = wgs.RadioButtons(radio_ax, buttons)
 
+    def createButton(self, element_name: str, button_text: str, bottom=0.9, width=0.12, height=0.05, left=0.02): #Adds a button object to the plot
+        radio_ax = plt.axes([left, bottom, width, height])
+        self.elements[element_name] = wgs.Button(radio_ax, button_text)
+
     def setY(self, factor: float): #For testing purposes
         try:
             self.line.set_ydata(self.y * float(factor))
@@ -84,7 +88,7 @@ class Friction(Plots):
 
     def setAngle(self, new_angle: float): #Updates angle of the inclined plane
         try:
-            if not(new_angle.isnumeric()):
+            if not(new_angle.lstrip('-').isdigit() and new_angle.count('-') <= 1):
                 raise TypeError('Angle must be a numeric value 0-90')
             elif float(new_angle) < 0 or float(new_angle) > 90:
                 raise Warning('Angle not in range(0-90)')
@@ -93,10 +97,10 @@ class Friction(Plots):
         except Warning as err:
             Friction.errorBoxFailure(self.error_box, str(err))
         else:
+            Friction.errorBoxSuccess(self.error_box, 'Data updated')
             self.angle = float(new_angle)
             self.setAxisY(Friction.calculateVelocity(Friction.inclinedPlaneAcceleration(self.angle, self.coefficient),
                                           self.x))
-            Friction.errorBoxSuccess(self.error_box, 'Data updated')
         assert type(self.angle) == float
 
     def setFrictionCoefficient(self, new_friction_coefficient: float): #Updates friction coefficient
@@ -119,6 +123,8 @@ if __name__ == '__main__':
     friction_plot.createTextbox('incline_angle', 'Angle[degrees]: ', '30', 0.45)
     friction_plot.createRadio('surface_radio', 'Surface type: ', 0.8, buttons=('Concrete', 'Wood'))
     friction_plot.createRadio('condition_radio', 'Surface condition: ', 0.65, buttons=('Dry', 'Wet'))
+    friction_plot.createButton('save_button', 'Save Plot', 0.35)
+
 
     #friction_plot.elements['acceleration_input'].on_submit(friction_plot.setY)
     friction_plot.elements['incline_angle'].on_submit(friction_plot.setAngle)
