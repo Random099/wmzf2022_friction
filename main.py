@@ -112,32 +112,28 @@ class Friction(Plots):
 
     def setAngle(self, new_angle: float): #Updates angle of the inclined plane
         try:
-            if not(new_angle.lstrip('-').isdigit() and new_angle.count('-') <= 1):
-                raise TypeError('Angle must be a numeric value 0-90.')
-            elif float(new_angle) < 0 or float(new_angle) > 90:
+            if float(new_angle) < 0 or float(new_angle) > 90:
                 raise Warning('Angle not in range (0-90).')
-        except TypeError as err:
-            Friction.errorBoxFailure(self.error_box, str(err))
-        except Warning as err:
-            Friction.errorBoxFailure(self.error_box, str(err))
-        else:
-            Friction.errorBoxSuccess(self.error_box, 'Data updated.')
             self.angle = float(new_angle)
+            Friction.errorBoxSuccess(self.error_box, 'Data updated.')
             self.setAxisY(Friction.calculateVelocity(Friction.inclinedPlaneAcceleration(self.angle, self.coefficient),
                                           self.x))
+        except ValueError:
+            Friction.errorBoxFailure(self.error_box, 'Angle has to be a float value in range 0-90')
+        except Warning as err:
+            Friction.errorBoxFailure(self.error_box, str(err))
         assert type(self.angle) == float
 
     def setFrictionCoefficient(self, new_coefficient: float): #Updates friction coefficient
         try:
-            if not(new_coefficient.isnumeric()):
-                raise TypeError('Friction coefficient must be a numeric value')
-        except TypeError as err:
-            Friction.errorBoxFailure(self.error_box, str(err))
-        else:
+            if float(new_coefficient) < 0:
+                raise Warning('Coefficient must be bigger than 0.')
             self.coefficient = float(new_coefficient)
+            Friction.errorBoxSuccess(self.error_box, 'Data updated.')
             self.setAxisY(Friction.calculateVelocity(Friction.inclinedPlaneAcceleration(self.angle, self.coefficient),
                                           self.x))
-            Friction.errorBoxSuccess(self.error_box, 'Data updated')
+        except ValueError:
+            Friction.errorBoxFailure(self.error_box, 'Coefficient has to be a float value bigger than 0')
         assert type(self.coefficient) == float
 
     def r_setCoefficient(self, label: str):
@@ -157,20 +153,22 @@ if __name__ == '__main__':
     friction_plot = Friction(time_axis, float(30), float(0.5))
 
     #Text boxes
-    friction_plot.createTextbox('acceleration_input', 'Set Y: ', '0', 0.55)
-    friction_plot.createTextbox('incline_angle', 'Angle[degrees]: ', '30', 0.45)
-    friction_plot.createTextbox('save_button', 'Save Plot:', 'File name', 0.35)
+    friction_plot.createTextbox('t_acceleration_input', 'Set Y: ', '0', 0.55)
+    friction_plot.createTextbox('t_incline_angle', 'Angle[degrees]: ', '30', 0.45)
+    friction_plot.createTextbox('t_friction_coefficient', 'Coefficient: ', '0.5', 0.35)
+    friction_plot.createTextbox('t_save_button', 'Save Plot:', 'File name', 0.25)
     #Radio buttons
-    friction_plot.createRadio('surface_radio', 'Surface type: ', 0.8, buttons=('concrete', 'asphalt', 'basalt slab', 'dirt road'))
-    friction_plot.createRadio('condition_radio', 'Surface condition: ', 0.65, buttons=('dry', 'wet'))
+    friction_plot.createRadio('r_surface_radio', 'Surface type: ', 0.8, buttons=('concrete', 'asphalt', 'basalt slab', 'dirt road'))
+    friction_plot.createRadio('r_condition_radio', 'Surface condition: ', 0.65, buttons=('dry', 'wet'))
     #Buttons
 
     #Text boxes' functions
-    friction_plot.elements['incline_angle'].on_submit(friction_plot.setAngle)
-    friction_plot.elements['save_button'].on_submit(friction_plot.savePlot)
+    friction_plot.elements['t_incline_angle'].on_submit(friction_plot.setAngle)
+    friction_plot.elements['t_save_button'].on_submit(friction_plot.savePlot)
+    friction_plot.elements['t_friction_coefficient'].on_submit(friction_plot.setFrictionCoefficient)
     #Radio buttons' functions
-    friction_plot.elements['surface_radio'].on_clicked(friction_plot.r_setCoefficient)
-    friction_plot.elements['condition_radio'].on_clicked(friction_plot.r_setCoefficient)
+    friction_plot.elements['r_surface_radio'].on_clicked(friction_plot.r_setCoefficient)
+    friction_plot.elements['r_condition_radio'].on_clicked(friction_plot.r_setCoefficient)
 
     #Buttons' functions
 
