@@ -49,8 +49,8 @@ class Plots:
         self.y = new_y
         self.line.set_data([], [])
         self.line, = self.ax.plot(self.x, self.y, self.line_color)
-        self.ax.set_ylim(self.y[0], self.y[-1])
-        self.ax.set_yticks(Plots.s_round(self.y))
+        self.ax.relim()
+        self.ax.autoscale_view()
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
