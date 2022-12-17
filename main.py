@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import matplotlib.widgets as wgs
 import numpy as np
 import math
+import os
 
 
 class Plots:
@@ -53,6 +54,19 @@ class Plots:
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
+    def savePlot(self, file_name: str):
+        try:
+            print(os.listdir())
+            if file_name+'.png' in os.listdir():
+                raise OSError('File already exists.')
+        except OSError as err:
+            Plots.errorBoxFailure(self.error_box, str(err))
+        except (Exception, ):
+            Plots.errorBoxFailure(self.error_box, 'Failed to save plot.')
+        else:
+            self.fig.savefig(file_name)
+            Plots.errorBoxSuccess(self.error_box, 'Plot successfully saved.')
+
     @staticmethod
     def errorBoxFailure(error_box, message: str):
         error_box.set_text(message)
@@ -68,6 +82,7 @@ class Plots:
     @staticmethod
     def s_round(number, base=5) -> float:
         return base * np.round(number / base)
+
 
 class Friction(Plots):
     g = float(9.8067)
@@ -89,15 +104,15 @@ class Friction(Plots):
     def setAngle(self, new_angle: float): #Updates angle of the inclined plane
         try:
             if not(new_angle.lstrip('-').isdigit() and new_angle.count('-') <= 1):
-                raise TypeError('Angle must be a numeric value 0-90')
+                raise TypeError('Angle must be a numeric value 0-90.')
             elif float(new_angle) < 0 or float(new_angle) > 90:
-                raise Warning('Angle not in range(0-90)')
+                raise Warning('Angle not in range (0-90).')
         except TypeError as err:
             Friction.errorBoxFailure(self.error_box, str(err))
         except Warning as err:
             Friction.errorBoxFailure(self.error_box, str(err))
         else:
-            Friction.errorBoxSuccess(self.error_box, 'Data updated')
+            Friction.errorBoxSuccess(self.error_box, 'Data updated.')
             self.angle = float(new_angle)
             self.setAxisY(Friction.calculateVelocity(Friction.inclinedPlaneAcceleration(self.angle, self.coefficient),
                                           self.x))
@@ -119,14 +134,20 @@ if __name__ == '__main__':
     time_axis = np.arange(0, 21)
     friction_plot = Friction(time_axis, float(30), float(0.5))
 
+    #Text boxes
     friction_plot.createTextbox('acceleration_input', 'Set Y: ', '0', 0.55)
     friction_plot.createTextbox('incline_angle', 'Angle[degrees]: ', '30', 0.45)
+    friction_plot.createTextbox('save_button', 'Save Plot:', 'File name', 0.35)
+    #Radio buttons
     friction_plot.createRadio('surface_radio', 'Surface type: ', 0.8, buttons=('Concrete', 'Wood'))
     friction_plot.createRadio('condition_radio', 'Surface condition: ', 0.65, buttons=('Dry', 'Wet'))
-    friction_plot.createButton('save_button', 'Save Plot', 0.35)
+    #Buttons
 
-
-    #friction_plot.elements['acceleration_input'].on_submit(friction_plot.setY)
+    #Text boxes' functions
     friction_plot.elements['incline_angle'].on_submit(friction_plot.setAngle)
+    friction_plot.elements['save_button'].on_submit(friction_plot.savePlot)
+    #Radio buttons' functions
+
+    #Buttons' functions
 
     plt.show()
