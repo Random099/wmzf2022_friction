@@ -86,15 +86,16 @@ class Plots:
 
 class Friction(Plots):
     g = float(9.8067)
-    surface_types = ('concrete', 'asphalt', 'basalt slab', 'dirt road')
-    surface_conditions = ('dry', 'wet')
+    surface_types = ['concrete', 'asphalt', 'basalt slab', 'dirt road']
+    surface_conditions = ['dry', 'wet']
     coefficient_values = [0.7, 0.9, 0.45, 0.75, 0.4, 0.65, 0.35, 0.55]
 
     def __init__(self, x, angle: float, coefficient: float, plot_title='Friction', x_label='time[s]', y_label='V(t)[m/s]'): #Default friction plot
-        y = Friction.calculateVelocity(Friction.inclinedPlaneAcceleration(angle, coefficient), x)
-        Plots.__init__(self, x, y, plot_title, x_label, y_label, line_color='green')
+        self.plot_type = 1
         self.angle = angle
         self.coefficient = coefficient
+        y = self.get_acceleration() * x
+        Plots.__init__(self, x, y, plot_title, x_label, y_label, line_color='green')
         self.coefficient_choice = ['', '']
 
     @staticmethod
@@ -102,13 +103,14 @@ class Friction(Plots):
         coefficient_list = [s_condition + ' ' + s_type for s_condition in Friction.surface_conditions for s_type in Friction.surface_types]
         return dict(zip(coefficient_list, Friction.coefficient_values))
 
-    @staticmethod
-    def inclinedPlaneAcceleration(angle: float, coefficient: float) -> float:
-        return (Friction.g * math.sin(np.radians(angle))) - (coefficient * Friction.g * math.cos(np.radians(angle)))
+    def get_acceleration(self) -> float:
+        return (Friction.g * math.sin(np.radians(self.angle))) - \
+               (self.coefficient * Friction.g * math.cos(np.radians(self.angle)))
 
-    @staticmethod
-    def calculateVelocity(acceleration: float, time: float) -> float:
-        return acceleration * time #XD
+    def set_plot_type(self, new_plot_type):
+        plot_type_dict = {'Velocity(t)': 1, 'Distance(t)': 2}
+        self.plot_type = plot_type_dict[new_plot_type]
+        self.ax.set_ylabel(new_plot_type)
 
     def setAngle(self, new_angle: float): #Updates angle of the inclined plane
         try:
@@ -116,8 +118,10 @@ class Friction(Plots):
                 raise Warning('Angle not in range (0-90).')
             self.angle = float(new_angle)
             Friction.errorBoxSuccess(self.error_box, 'Data updated.')
-            self.setAxisY(Friction.calculateVelocity(Friction.inclinedPlaneAcceleration(self.angle, self.coefficient),
-                                          self.x))
+            if self.plot_type == 1:
+                self.setAxisY(self.get_acceleration() * self.x)
+            elif self.plot_type == 2:
+                self.setAxisY(self.get_acceleration() * self.x ** 2)
         except ValueError:
             Friction.errorBoxFailure(self.error_box, 'Angle has to be a float value in range 0-90')
         except Warning as err:
@@ -127,24 +131,28 @@ class Friction(Plots):
     def setFrictionCoefficient(self, new_coefficient: float): #Updates friction coefficient
         try:
             if float(new_coefficient) < 0:
-                raise Warning('Coefficient must be bigger than 0.')
+                raise Warning('Coefficient cannot be negative.')
             self.coefficient = float(new_coefficient)
             Friction.errorBoxSuccess(self.error_box, 'Data updated.')
-            self.setAxisY(Friction.calculateVelocity(Friction.inclinedPlaneAcceleration(self.angle, self.coefficient),
-                                          self.x))
+            if self.plot_type == 1:
+                self.setAxisY(self.get_acceleration() * self.x)
+            elif self.plot_type == 2:
+                self.setAxisY(self.get_acceleration() * self.x ** 2)
         except ValueError:
-            Friction.errorBoxFailure(self.error_box, 'Coefficient has to be a float value bigger than 0')
+            Friction.errorBoxFailure(self.error_box, 'Coefficient has to be a non-negative float value')
         assert type(self.coefficient) == float
 
     def r_setCoefficient(self, label: str):
-        if label in Friction.surface_types:
-            self.coefficient_choice[1] = label
-        if label in Friction.surface_conditions:
-            self.coefficient_choice[0] = label
+        if label.lower() in Friction.surface_types:
+            self.coefficient_choice[1] = label.lower()
+        if label.lower() in Friction.surface_conditions:
+            self.coefficient_choice[0] = label.lower()
         if self.coefficient_choice[0] != '' and self.coefficient_choice[1] != '':
             self.coefficient = float(Friction.getCoefficientDict()[' '.join(self.coefficient_choice)])
-            self.setAxisY(Friction.calculateVelocity(Friction.inclinedPlaneAcceleration(self.angle, self.coefficient),
-                                                     self.x))
+            if self.plot_type == 1:
+                self.setAxisY(self.get_acceleration() * self.x)
+            elif self.plot_type == 2:
+                self.setAxisY(self.get_acceleration() * self.x**2)
             Friction.errorBoxSuccess(self.error_box, 'Data updated')
 
 
@@ -153,13 +161,14 @@ if __name__ == '__main__':
     friction_plot = Friction(time_axis, float(30), float(0.5))
 
     #Text boxes
-    friction_plot.createTextbox('t_acceleration_input', 'Set Y: ', '0', 0.55)
-    friction_plot.createTextbox('t_incline_angle', 'Angle[degrees]: ', '30', 0.45)
-    friction_plot.createTextbox('t_friction_coefficient', 'Coefficient: ', '0.5', 0.35)
-    friction_plot.createTextbox('t_save_button', 'Save Plot:', 'File name', 0.25)
+    friction_plot.createTextbox('t_acceleration_input', 'Set Y: ', '0', 0.45)
+    friction_plot.createTextbox('t_incline_angle', 'Angle[degrees]: ', '30', 0.35)
+    friction_plot.createTextbox('t_friction_coefficient', 'Coefficient: ', '0.5', 0.25)
+    friction_plot.createTextbox('t_save_button', 'Save Plot:', 'File name', 0.15)
     #Radio buttons
-    friction_plot.createRadio('r_surface_radio', 'Surface type: ', 0.8, buttons=('concrete', 'asphalt', 'basalt slab', 'dirt road'))
-    friction_plot.createRadio('r_condition_radio', 'Surface condition: ', 0.65, buttons=('dry', 'wet'))
+    friction_plot.createRadio('r_plot_type', 'Plot type: ', 0.85, buttons=('Velocity(t)', 'Distance(t)'))
+    friction_plot.createRadio('r_surface_radio', 'Surface type: ', 0.7, buttons=('Concrete', 'Asphalt', 'Basalt slab', 'Dirt road'))
+    friction_plot.createRadio('r_condition_radio', 'Surface condition: ', 0.55, buttons=('Dry', 'Wet'))
     #Buttons
 
     #Text boxes' functions
@@ -167,6 +176,7 @@ if __name__ == '__main__':
     friction_plot.elements['t_save_button'].on_submit(friction_plot.savePlot)
     friction_plot.elements['t_friction_coefficient'].on_submit(friction_plot.setFrictionCoefficient)
     #Radio buttons' functions
+    friction_plot.elements['r_plot_type'].on_clicked(friction_plot.set_plot_type)
     friction_plot.elements['r_surface_radio'].on_clicked(friction_plot.r_setCoefficient)
     friction_plot.elements['r_condition_radio'].on_clicked(friction_plot.r_setCoefficient)
 
