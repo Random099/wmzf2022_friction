@@ -23,13 +23,13 @@ class Plots:
         self.elements = {} #Dict holding references to the elements on the plot
 
     @staticmethod
-    def errorBoxFailure(error_box, message: str):
+    def error_box_failure(error_box, message: str):
         error_box.set_text(message)
         error_box.set_color('red')
         error_box.set_bbox(dict(facecolor='none', edgecolor='red'))
 
     @staticmethod
-    def errorBoxSuccess(error_box, message: str):
+    def error_box_success(error_box, message: str):
         error_box.set_text(message)
         error_box.set_color('black')
         error_box.set_bbox(dict(facecolor='none', edgecolor='none'))
@@ -38,30 +38,30 @@ class Plots:
     def s_round(number, base=5) -> float:
         return base * np.round(number / base)
 
-    def createTextbox(self, element_name: str, title: str, initial_text: str, bottom=0.57, width=0.12, height=0.05, left=0.02): #Adds a text box object to the plot
+    def create_textbox(self, element_name: str, title: str, initial_text: str, bottom=0.57, width=0.12, height=0.05, left=0.02): #Adds a text box object to the plot
         box_ax = plt.axes([left, bottom, width, height])
         box_ax.text(0, 1.1, title)
         self.elements[element_name] = wgs.TextBox(box_ax, '', initial=initial_text, textalignment='center')
 
-    def createRadio(self, element_name: str, title: str, bottom=0.9, width=0.12, height=0.1, left=0.02, color='white', buttons=()): #Adds a radio button object to the plot
+    def create_radio(self, element_name: str, title: str, bottom=0.9, width=0.12, height=0.1, left=0.02, color='white', buttons=()): #Adds a radio button object to the plot
         radio_ax = plt.axes([left, bottom, width, height], facecolor=color)
         radio_ax.text(0, 1.1, title)
         self.elements[element_name] = wgs.RadioButtons(radio_ax, buttons)
 
-    def createButton(self, element_name: str, button_text: str, bottom=0.9, width=0.12, height=0.05, left=0.02): #Adds a button object to the plot
+    def create_button(self, element_name: str, button_text: str, bottom=0.9, width=0.12, height=0.05, left=0.02): #Adds a button object to the plot
         radio_ax = plt.axes([left, bottom, width, height])
         self.elements[element_name] = wgs.Button(radio_ax, button_text)
 
-    def setY(self, factor: float): #For testing purposes
+    def set_y(self, factor: float): #For testing purposes
         try:
             self.line.set_ydata(self.y * float(factor))
         except:
-            Plots.errorBoxFailure(self.error_box, 'Input has to be float')
+            Plots.error_box_failure(self.error_box, 'Input has to be float')
         else:
-            Plots.errorBoxSuccess(self.error_box, 'Data updated')
+            Plots.error_box_success(self.error_box, 'Data updated')
             self.fig.canvas.draw()
 
-    def setAxisY(self, new_y):
+    def set_axis_y(self, new_y):
         self.y = new_y
         self.line.set_data([], [])
         self.line, = self.ax.plot(self.x, self.y, self.line_color)
@@ -70,18 +70,18 @@ class Plots:
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
-    def savePlot(self, file_name: str):
+    def save_plot(self, file_name: str):
         try:
             print(os.listdir())
             if file_name+'.png' in os.listdir():
                 raise OSError('File already exists.')
         except OSError as err:
-            Plots.errorBoxFailure(self.error_box, str(err))
+            Plots.error_box_failure(self.error_box, str(err))
         except (Exception, ):
-            Plots.errorBoxFailure(self.error_box, 'Failed to save plot.')
+            Plots.error_box_failure(self.error_box, 'Failed to save plot.')
         else:
             self.fig.savefig(file_name)
-            Plots.errorBoxSuccess(self.error_box, 'Plot successfully saved.')
+            Plots.error_box_success(self.error_box, 'Plot successfully saved.')
 
 
 class Friction(Plots):
@@ -90,7 +90,7 @@ class Friction(Plots):
     surface_conditions = ['dry', 'wet']
     coefficient_values = [0.7, 0.9, 0.45, 0.75, 0.4, 0.65, 0.35, 0.55]
 
-    def __init__(self, x, angle: float, coefficient: float, plot_title='Friction', x_label='time[s]', y_label='V(t)[m/s]'): #Default friction plot
+    def __init__(self, x, angle: float, coefficient: float, plot_title='Friction', x_label='time[s]', y_label='Velocity(t)[m/s]'): #Default friction plot
         self.plot_type = 1
         self.angle = angle
         self.coefficient = coefficient
@@ -99,7 +99,7 @@ class Friction(Plots):
         self.coefficient_choice = ['', '']
 
     @staticmethod
-    def getCoefficientDict() -> dict:
+    def get_coefficient_dict() -> dict:
         coefficient_list = [s_condition + ' ' + s_type for s_condition in Friction.surface_conditions for s_type in Friction.surface_types]
         return dict(zip(coefficient_list, Friction.coefficient_values))
 
@@ -107,53 +107,57 @@ class Friction(Plots):
         return (Friction.g * math.sin(np.radians(self.angle))) - \
                (self.coefficient * Friction.g * math.cos(np.radians(self.angle)))
 
-    def set_plot_type(self, new_plot_type):
-        plot_type_dict = {'Velocity(t)': 1, 'Distance(t)': 2}
+    def set_plot_type(self, new_plot_type: str):
+        plot_type_dict = {'Velocity(t)[m/s]': 1, 'Distance(t)[m]': 2}
         self.plot_type = plot_type_dict[new_plot_type]
         self.ax.set_ylabel(new_plot_type)
+        if self.plot_type == 1:
+            self.set_axis_y(self.get_acceleration() * self.x)
+        elif self.plot_type == 2:
+            self.set_axis_y(self.get_acceleration() * self.x ** 2)
 
-    def setAngle(self, new_angle: float): #Updates angle of the inclined plane
+    def set_angle(self, new_angle: float): #Updates angle of the inclined plane
         try:
             if float(new_angle) < 0 or float(new_angle) > 90:
                 raise Warning('Angle not in range (0-90).')
             self.angle = float(new_angle)
-            Friction.errorBoxSuccess(self.error_box, 'Data updated.')
+            Friction.error_box_success(self.error_box, 'Data updated.')
             if self.plot_type == 1:
-                self.setAxisY(self.get_acceleration() * self.x)
+                self.set_axis_y(self.get_acceleration() * self.x)
             elif self.plot_type == 2:
-                self.setAxisY(self.get_acceleration() * self.x ** 2)
+                self.set_axis_y(self.get_acceleration() * self.x ** 2)
         except ValueError:
-            Friction.errorBoxFailure(self.error_box, 'Angle has to be a float value in range 0-90')
+            Friction.error_box_failure(self.error_box, 'Angle has to be a float value in range 0-90')
         except Warning as err:
-            Friction.errorBoxFailure(self.error_box, str(err))
+            Friction.error_box_failure(self.error_box, str(err))
         assert type(self.angle) == float
 
-    def setFrictionCoefficient(self, new_coefficient: float): #Updates friction coefficient
+    def set_friction_coefficient(self, new_coefficient: float): #Updates friction coefficient
         try:
             if float(new_coefficient) < 0:
                 raise Warning('Coefficient cannot be negative.')
             self.coefficient = float(new_coefficient)
-            Friction.errorBoxSuccess(self.error_box, 'Data updated.')
+            Friction.error_box_success(self.error_box, 'Data updated.')
             if self.plot_type == 1:
-                self.setAxisY(self.get_acceleration() * self.x)
+                self.set_axis_y(self.get_acceleration() * self.x)
             elif self.plot_type == 2:
-                self.setAxisY(self.get_acceleration() * self.x ** 2)
+                self.set_axis_y(self.get_acceleration() * self.x ** 2)
         except ValueError:
-            Friction.errorBoxFailure(self.error_box, 'Coefficient has to be a non-negative float value')
+            Friction.error_box_failure(self.error_box, 'Coefficient has to be a non-negative float value')
         assert type(self.coefficient) == float
 
-    def r_setCoefficient(self, label: str):
+    def r_set_coefficient(self, label: str):
         if label.lower() in Friction.surface_types:
             self.coefficient_choice[1] = label.lower()
         if label.lower() in Friction.surface_conditions:
             self.coefficient_choice[0] = label.lower()
         if self.coefficient_choice[0] != '' and self.coefficient_choice[1] != '':
-            self.coefficient = float(Friction.getCoefficientDict()[' '.join(self.coefficient_choice)])
+            self.coefficient = float(Friction.get_coefficient_dict()[' '.join(self.coefficient_choice)])
             if self.plot_type == 1:
-                self.setAxisY(self.get_acceleration() * self.x)
+                self.set_axis_y(self.get_acceleration() * self.x)
             elif self.plot_type == 2:
-                self.setAxisY(self.get_acceleration() * self.x**2)
-            Friction.errorBoxSuccess(self.error_box, 'Data updated')
+                self.set_axis_y(self.get_acceleration() * self.x**2)
+            Friction.error_box_success(self.error_box, 'Data updated')
 
 
 if __name__ == '__main__':
@@ -161,24 +165,23 @@ if __name__ == '__main__':
     friction_plot = Friction(time_axis, float(30), float(0.5))
 
     #Text boxes
-    friction_plot.createTextbox('t_acceleration_input', 'Set Y: ', '0', 0.45)
-    friction_plot.createTextbox('t_incline_angle', 'Angle[degrees]: ', '30', 0.35)
-    friction_plot.createTextbox('t_friction_coefficient', 'Coefficient: ', '0.5', 0.25)
-    friction_plot.createTextbox('t_save_button', 'Save Plot:', 'File name', 0.15)
+    friction_plot.create_textbox('t_incline_angle', 'Angle[degrees]: ', '30', 0.45)
+    friction_plot.create_textbox('t_friction_coefficient', 'Coefficient: ', '0.5', 0.35)
+    friction_plot.create_textbox('t_save_button', 'Save Plot:', 'File name', 0.25)
     #Radio buttons
-    friction_plot.createRadio('r_plot_type', 'Plot type: ', 0.85, buttons=('Velocity(t)', 'Distance(t)'))
-    friction_plot.createRadio('r_surface_radio', 'Surface type: ', 0.7, buttons=('Concrete', 'Asphalt', 'Basalt slab', 'Dirt road'))
-    friction_plot.createRadio('r_condition_radio', 'Surface condition: ', 0.55, buttons=('Dry', 'Wet'))
+    friction_plot.create_radio('r_plot_type', 'Plot type: ', 0.85, buttons=('Velocity(t)[m/s]', 'Distance(t)[m]'))
+    friction_plot.create_radio('r_surface_radio', 'Surface type: ', 0.7, buttons=('Concrete', 'Asphalt', 'Basalt slab', 'Dirt road'))
+    friction_plot.create_radio('r_condition_radio', 'Surface condition: ', 0.55, buttons=('Dry', 'Wet'))
     #Buttons
 
     #Text boxes' functions
-    friction_plot.elements['t_incline_angle'].on_submit(friction_plot.setAngle)
-    friction_plot.elements['t_save_button'].on_submit(friction_plot.savePlot)
-    friction_plot.elements['t_friction_coefficient'].on_submit(friction_plot.setFrictionCoefficient)
+    friction_plot.elements['t_incline_angle'].on_submit(friction_plot.set_angle)
+    friction_plot.elements['t_save_button'].on_submit(friction_plot.save_plot)
+    friction_plot.elements['t_friction_coefficient'].on_submit(friction_plot.set_friction_coefficient)
     #Radio buttons' functions
     friction_plot.elements['r_plot_type'].on_clicked(friction_plot.set_plot_type)
-    friction_plot.elements['r_surface_radio'].on_clicked(friction_plot.r_setCoefficient)
-    friction_plot.elements['r_condition_radio'].on_clicked(friction_plot.r_setCoefficient)
+    friction_plot.elements['r_surface_radio'].on_clicked(friction_plot.r_set_coefficient)
+    friction_plot.elements['r_condition_radio'].on_clicked(friction_plot.r_set_coefficient)
 
     #Buttons' functions
 
