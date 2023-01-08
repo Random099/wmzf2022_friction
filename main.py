@@ -6,7 +6,7 @@ import os
 
 
 class Plots:
-    def __init__(self, x, y, plot_title: str, x_label: str, y_label: str, line_color: str): #Default plot
+    def __init__(self, x, y, plot_title: str, x_label: str, y_label: str, line_color: str):
         self.x = x
         self.y = y
         self.line_color = line_color
@@ -52,7 +52,7 @@ class Plots:
         radio_ax = plt.axes([left, bottom, width, height])
         self.elements[element_name] = wgs.Button(radio_ax, button_text)
 
-    def set_axis_x(self, new_x):
+    def set_axis_x(self, new_x): #Sets the x axis and updates plot
         self.x = new_x
         self.line.set_data([], [])
         self.line, = self.ax.plot(self.x, self.y, self.line_color)
@@ -61,7 +61,7 @@ class Plots:
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
-    def set_axis_y(self, new_y):
+    def set_axis_y(self, new_y): #Sets the y axis and updates plot
         self.y = new_y
         self.line.set_data([], [])
         self.line, = self.ax.plot(self.x, self.y, self.line_color)
@@ -70,7 +70,7 @@ class Plots:
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
-    def save_plot(self, file_name: str):
+    def save_plot(self, file_name: str): #Saves plot to png file of chosen name
         try:
             print(os.listdir())
             if file_name+'.png' in os.listdir():
@@ -90,10 +90,11 @@ class Friction(Plots):
     surface_conditions = ['dry', 'wet']
     coefficient_values = [0.7, 0.9, 0.45, 0.75, 0.4, 0.65, 0.35, 0.55]
 
-    def __init__(self, x, angle: float, coefficient: float, plot_title='Friction', x_label='time[s]', y_label='Velocity(t)[m/s]'): #Default friction plot
+    def __init__(self, angle: float, coefficient: float, plot_title='Friction', x_label='time[s]', y_label='Velocity(t)[m/s]'):
         self.plot_type = 1
         self.angle = angle
         self.coefficient = coefficient
+        x = np.arange(0, 21)
         y = self.get_acceleration() * x
         Plots.__init__(self, x, y, plot_title, x_label, y_label, line_color='green')
         self.coefficient_choice = ['', '']
@@ -103,7 +104,7 @@ class Friction(Plots):
         coefficient_list = [s_condition + ' ' + s_type for s_condition in Friction.surface_conditions for s_type in Friction.surface_types]
         return dict(zip(coefficient_list, Friction.coefficient_values))
 
-    def get_acceleration(self) -> float:
+    def get_acceleration(self) -> float: #Calculates acceleraton on inclined plane
         return (Friction.g * math.sin(np.radians(self.angle))) - \
                (self.coefficient * Friction.g * math.cos(np.radians(self.angle)))
 
@@ -119,13 +120,13 @@ class Friction(Plots):
     def set_axis_y(self, new_y):
         self.y = new_y
         self.line.set_data([], [])
-        self.line, = self.ax.plot(np.arange(0, len(self.y[self.y >= 0])), self.y[self.y >= 0], self.line_color)
+        self.line, = self.ax.plot(np.arange(0, len(self.y[self.y >= 0])), self.y[self.y >= 0], self.line_color) #Plots only the non-negative values of y
         self.ax.relim()
         self.ax.autoscale_view()
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
-    def set_time(self, new_time):
+    def set_time(self, new_time: float): #Sets the x axis of friction plot(time)
         self.x = np.arange(0, float(new_time) + 1)
         self.ax.set_xticks(self.x)
         if self.plot_type == 1:
@@ -178,8 +179,7 @@ class Friction(Plots):
 
 
 if __name__ == '__main__':
-    time_axis = np.arange(0, 21)
-    friction_plot = Friction(time_axis, float(30), float(0.5))
+    friction_plot = Friction(float(30), float(0.5))
 
     #Text boxes
     friction_plot.create_textbox('t_duration', 'Duration[s]: ', '20', 0.45)
